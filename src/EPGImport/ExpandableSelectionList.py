@@ -2,6 +2,7 @@ from Components.MenuList import MenuList
 from Tools.Directories import resolveFilename, SCOPE_CURRENT_SKIN
 from enigma import eListboxPythonMultiContent, eListbox, gFont, RT_HALIGN_LEFT
 from Tools.LoadPixmap import LoadPixmap
+
 import skin
 
 expandableIcon = LoadPixmap(resolveFilename(SCOPE_CURRENT_SKIN, "icons/expandable.png"))
@@ -10,19 +11,13 @@ expandedIcon = LoadPixmap(resolveFilename(SCOPE_CURRENT_SKIN, "icons/expanded.pn
 
 def loadSettings():
 	global cat_desc_loc, entry_desc_loc, cat_icon_loc, entry_icon_loc
-
-	# expandable list (skin parameters defined by the plugin)
-        x, y, w, h = skin.parameters.get("ExpandableListDescr", (40, 3, 650, 30))
-	x, y, w, h = skin.parameters.get("ExpandableListIcon", (0, 2, 30, 25))
-	cat_icon_loc = (x, y, w, h)
-
-	indent = x + w # indentation for the selection list entries
-
-	# selection list (skin parameters also used in enigma2)
-        x, y, w, h = skin.parameters.get("SelectionListDescr", (25, 3, 650, 30))
-	entry_desc_loc = (x + indent, y, w - indent, h)
-        x, y, w, h = skin.parameters.get("SelectionListLock", (0, 2, 25, 24))
-	entry_icon_loc = (x + indent, y, w, h)
+	x, y, w, h = skin.parameters.get("SelectionListDescr", (25, 3, 650, 30))
+	ind = x # Indent the entries by the same amount as the icon.
+	cat_desc_loc = (x, y, w, h)
+	entry_desc_loc = (x + ind, y, w - ind, h)
+	x, y, w, h = skin.parameters.get("SelectionListLock", (0, 2, 25, 24))
+	cat_icon_loc = (x, 0, w, y + y + h) # The category icon is larger
+	entry_icon_loc = (x + ind, y, w, h)
 
 
 def category(description, isExpanded=False):
@@ -34,7 +29,7 @@ def category(description, isExpanded=False):
 	return [
 		(description, isExpanded, []),
 		(eListboxPythonMultiContent.TYPE_TEXT,) + cat_desc_loc + (0, RT_HALIGN_LEFT, description),
-		(eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND,) + cat_icon_loc + (icon,)
+		(eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST,) + cat_icon_loc + (icon,)
 	]
 
 
@@ -48,20 +43,21 @@ def entry(description, value, selected):
 		selectionpng = LoadPixmap(cached=True, path=resolveFilename(SCOPE_CURRENT_SKIN, "icons/lock_on.png"))
 	else:
 		selectionpng = LoadPixmap(cached=True, path=resolveFilename(SCOPE_CURRENT_SKIN, "icons/lock_off.png"))
-	res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND,) + entry_icon_loc + (selectionpng,))
+	res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST,) + entry_icon_loc + (selectionpng,))
 	return res
 
 
 def expand(cat, value=True):
 	# cat is a list of data and icons
 	if cat[0][1] != value:
+		ix, iy, iw, ih = skin.parameters.get("SelectionListLock", (0, 2, 25, 24))
 		if value:
 			icon = expandedIcon
 		else:
 			icon = expandableIcon
 		t = cat[0]
 		cat[0] = (t[0], value, t[2])
-		cat[2] = (eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND,) + cat_icon_loc + (icon,)
+		cat[2] = (eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST,) + cat_icon_loc + (icon,)
 
 
 def isExpanded(cat):
